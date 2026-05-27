@@ -34,7 +34,7 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
         generationConfig: {
           temperature: 0.25,
           topP: 0.8,
-          maxOutputTokens: 1800,
+          maxOutputTokens: 2600,
           responseMimeType: "text/plain",
         },
       }),
@@ -51,7 +51,7 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
 
   const output = extractOutputText(payload).trim();
   if (!output) throw new Error("Gemini boş analiz yanıtı döndürdü.");
-  return output;
+  return normalizeAnalysisOutput(output);
 }
 
 const SYSTEM_PROMPT = `
@@ -133,10 +133,15 @@ Verilen gizli piyasa bağlamı dışına çıkma, canlı veri uydurma.
 Standart düz metin karakter yapısını kullan.
 Markdown, kalın yazı, italik, emoji, madde işareti, kod bloğu veya süslü anlatım kullanma.
 
-Raporları tam olarak şu düz metin tablo hiyerarşisiyle üret:
+Raporları tam olarak şu düz metin tablo hiyerarşisiyle üret.
+Cevabın ilk satırı mutlaka "TABLO: TAV Özet" olmalı.
+Tablo dışında giriş cümlesi, kapanış cümlesi veya açıklama yazma.
+"efendim" hitabını TAV Özet tablosunda Hitap satırında kullan.
+Aşağıdaki tablo başlıklarının tamamını aynı sırayla üret.
 
 TABLO: TAV Özet
 Alan | Değer
+Hitap | efendim
 Parite | ...
 
 TABLO: Piyasa Türü
@@ -217,6 +222,13 @@ function extractOutputText(payload) {
     .flatMap((candidate) => candidate.content?.parts ?? [])
     .map((part) => part.text ?? "")
     .join("\n");
+}
+
+function normalizeAnalysisOutput(text) {
+  const trimmed = text.trim();
+  const firstTableIndex = trimmed.indexOf("TABLO:");
+  if (firstTableIndex > 0) return trimmed.slice(firstTableIndex).trim();
+  return trimmed;
 }
 
 function userError(message) {
