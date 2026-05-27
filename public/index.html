@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Kripto Analiz</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true"></span>
+          <div>
+            <h1>Kripto Analiz</h1>
+            <p>Binance spot ve MEXC perpetual USDT pariteleri</p>
+          </div>
+        </div>
+        <div class="status-pill" id="statusPill">Hazır</div>
+      </header>
+
+      <section class="workspace">
+        <form class="analysis-form" id="analysisForm" autocomplete="off">
+          <label for="symbolInput">Parite</label>
+          <div class="input-row">
+            <div class="symbol-box">
+              <input
+                id="symbolInput"
+                name="symbol"
+                type="text"
+                inputmode="latin"
+                spellcheck="false"
+                placeholder="BTCUSDT veya BTCUSDT.P"
+                aria-describedby="symbolError"
+              />
+              <div class="suggestions" id="suggestions" hidden></div>
+            </div>
+            <button type="submit" id="submitButton">Analiz Et</button>
+          </div>
+          <p class="error" id="symbolError" role="alert"></p>
+        </form>
+
+        <section class="result-panel" id="resultPanel" hidden>
+          <div class="result-head">
+            <div>
+              <p class="eyebrow" id="venueLabel"></p>
+              <h2 id="resultSymbol"></h2>
+            </div>
+            <time id="generatedAt"></time>
+          </div>
+          <div class="tables" id="tables"></div>
+        </section>
+
+        <section class="empty-panel" id="emptyPanel">
+          <div class="market-strip" aria-hidden="true">
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <h2>Pariteyi girin, analizi başlatın.</h2>
+        </section>
+      </section>
+    </main>
+
+    <footer>Bu uygulamadaki içerikler yatırım tavsiyesi değildir; eğitim ve piyasa takibi amaçlıdır.</footer>
+
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

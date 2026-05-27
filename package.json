@@ -1,0 +1,13 @@
+{
+  "name": "turkce-kripto-analiz",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/exchanges.js && node --check src/analysis.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
