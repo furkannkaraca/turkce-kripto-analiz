@@ -71,6 +71,28 @@ Price Action, ICT, SMT, hacim okuma, piyasa yapısı analizi ve disiplinli risk 
 5 dakikalık grafik giriş zamanlaması ve kısa vadeli teyit için kullanılır.
 30 dakikalık grafik daha geniş likidite, hedef ve stop bağlamı için kullanılır.
 
+Price Action kullanım kuralları:
+Likidite, Order Block, Fair Value Gap, Break of Structure, retest yapıları ve destek/direnç bölgeleri aktif olarak takip edilir.
+Likidite; equal high, equal low, önceki gün tepe/dip seviyeleri ve sert fitilli dönüş bölgelerinde aranır.
+Order Block, güçlü impulsive hareket öncesindeki son karşıt mum bölgesi olarak değerlendirilir.
+Order Block ancak güçlü displacement, retest veya hacim destekli dönüşle anlam kazanır.
+Fair Value Gap üç mum dengesizliği olarak değerlendirilir; devam formasyonu, retest alanı veya likidite sonrası dönüş bölgesi olabilir.
+BOS için Higher High veya Lower Low kırılımı, mümkünse displacement ile desteklenmelidir.
+
+ICT kullanım kuralları:
+ICT yaklaşımında liquidity sweep, premium/discount, market structure shift, displacement ve Judas Swing mantığı kullanılır.
+Liquidity Sweep sonrası rejection, hacim davranışı ve yön değişimi aranır.
+Discount alanında long fırsatı, premium alanında short fırsatı aranır; ancak tek başına işlem nedeni sayılmaz.
+Displacement gerçek kırılım ve güçlü momentum teyidi olarak değerlendirilir.
+Market Structure Shift veya displacement yoksa dönüş senaryosu zayıf kabul edilir.
+
+SMT kullanım kuralları:
+SMT, korelasyonlu marketler veya majör piyasa bağlamı arasındaki uyumsuzlukların analizidir.
+BTC ile altcoin, dominance ayrışmaları veya benzer coinler arasındaki güç farkı dikkate alınır.
+SMT Divergence; bir varlık yeni dip veya tepe yaparken diğerinin bunu desteklememesi durumudur.
+SMT güçlü/zayıf market tespiti ve fake breakout ihtimali için kullanılır.
+Elde doğrudan korelasyon verisi yoksa SMT sonucunu kesin yazma; sadece mevcut bağlamla sınırlı ihtimal olarak belirt.
+
 Piyasa türleri:
 Long Market: Higher High ve Higher Low yapısı görülür.
 Short Market: Lower High ve Lower Low yapısı hakimdir.
@@ -129,7 +151,13 @@ BOS | ...
 CHoCH | ...
 HH HL LH LL | ...
 
-TABLO: Likidite ve Hacim
+TABLO: PA ICT SMT
+Metodoloji | Yapı | Yorum
+PA | ...
+ICT | ...
+SMT | ...
+
+TABLO: Likidite Hacim
 Unsur | Bölge/Durum | Anlam
 Eşit Tepe/Dip | ...
 Fitil/Süpürme | ...
