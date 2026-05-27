@@ -1,6 +1,6 @@
 import { VENUES } from "../shared/symbols.js";
 
-const BINANCE_BASE = "https://api.binance.com";
+const BINANCE_BASES = ["https://api.binance.com", "https://data-api.binance.vision"];
 const MEXC_CONTRACT_BASE = "https://contract.mexc.com";
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
@@ -81,7 +81,7 @@ export async function getSuggestions(query = "", limit = 12) {
 
 async function getTicker(symbolInfo) {
   if (symbolInfo.venue === VENUES.BINANCE_SPOT) {
-    const data = await fetchJson(`${BINANCE_BASE}/api/v3/ticker/24hr?symbol=${symbolInfo.upstreamSymbol}`);
+    const data = await fetchBinanceJson(`/api/v3/ticker/24hr?symbol=${symbolInfo.upstreamSymbol}`);
     return {
       lastPrice: num(data.lastPrice),
       priceChangePercent: num(data.priceChangePercent),
@@ -106,9 +106,7 @@ async function getTicker(symbolInfo) {
 
 async function getCandles(symbolInfo, interval = "15m") {
   if (symbolInfo.venue === VENUES.BINANCE_SPOT) {
-    const data = await fetchJson(
-      `${BINANCE_BASE}/api/v3/klines?symbol=${symbolInfo.upstreamSymbol}&interval=${interval}&limit=200`,
-    );
+    const data = await fetchBinanceJson(`/api/v3/klines?symbol=${symbolInfo.upstreamSymbol}&interval=${interval}&limit=200`);
     return data.map((row) => ({
       time: Number(row[0]),
       open: num(row[1]),
@@ -132,7 +130,7 @@ async function getCandles(symbolInfo, interval = "15m") {
 async function getMarketIndexes() {
   const symbols = ["BTCUSDT", "ETHUSDT", "BNBUSDT"];
   const [tickerResults, globalResult] = await Promise.all([
-    Promise.allSettled(symbols.map((symbol) => fetchJson(`${BINANCE_BASE}/api/v3/ticker/24hr?symbol=${symbol}`))),
+    Promise.allSettled(symbols.map((symbol) => fetchBinanceJson(`/api/v3/ticker/24hr?symbol=${symbol}`))),
     Promise.allSettled([fetchJson("https://api.coingecko.com/api/v3/global")]).then((results) => results[0]),
   ]);
 
@@ -287,7 +285,7 @@ function rsi(values, period) {
 
 async function getBinanceSpotSymbols() {
   return cached("binance-symbols", async () => {
-    const data = await fetchJson(`${BINANCE_BASE}/api/v3/exchangeInfo`);
+    const data = await fetchBinanceJson("/api/v3/exchangeInfo");
     return new Set(
       data.symbols
         .filter((item) => item.status === "TRADING" && item.quoteAsset === "USDT" && item.isSpotTradingAllowed !== false)
@@ -316,6 +314,27 @@ async function cached(key, loader) {
   return value;
 }
 
+async function fetchBinanceJson(path) {
+  let lastError;
+
+  for (const baseUrl of BINANCE_BASES) {
+    try {
+      return await fetchJson(`${baseUrl}${path}`);
+    } catch (error) {
+      lastError = error;
+      if (![451, 403, 429].includes(error.upstreamStatus)) throw error;
+    }
+  }
+
+  const error = new Error(
+    lastError?.upstreamStatus === 451
+      ? "Binance piyasa verisi bu hosting bölgesinden engellendi. Render bölgesini Frankfurt veya Singapore yapmayı deneyin."
+      : (lastError?.message ?? "Binance piyasa verisi alınamadı."),
+  );
+  error.status = 502;
+  throw error;
+}
+
 async function fetchJson(url) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12000);
@@ -328,6 +347,7 @@ async function fetchJson(url) {
     if (!response.ok) {
       const error = new Error(`Piyasa verisi alınamadı: HTTP ${response.status}`);
       error.status = 502;
+      error.upstreamStatus = response.status;
       throw error;
     }
     const json = JSON.parse(body);
