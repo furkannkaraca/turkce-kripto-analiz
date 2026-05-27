@@ -1,9 +1,52 @@
 const DEFAULT_MODEL = "gemini-2.5-pro";
+const REQUIRED_TABLES = [
+  "TABLO: TAV Özet",
+  "TABLO: Piyasa Türü",
+  "TABLO: Market Structure",
+  "TABLO: PA ICT SMT",
+  "TABLO: Likidite Hacim",
+  "TABLO: TAV Senaryo",
+  "TABLO: Risk Disiplini",
+];
 
 export async function generateAnalysis({ symbolInfo, marketContext, apiKey, model = DEFAULT_MODEL }) {
   if (!apiKey) {
     throw userError("Gemini API anahtarı bulunamadı. Lütfen GEMINI_API_KEY ortam değişkenini ayarlayın.");
   }
+
+  let lastOutput = "";
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const output = await requestGeminiAnalysis({
+      symbolInfo,
+      marketContext,
+      apiKey,
+      model,
+      retryMissingTables: attempt > 0 ? missingTables(lastOutput) : [],
+    });
+
+    lastOutput = normalizeAnalysisOutput(output);
+    if (!missingTables(lastOutput).length) return lastOutput;
+  }
+
+  const error = new Error(`Gemini analizi eksik döndürdü. Eksik tablolar: ${missingTables(lastOutput).join(", ")}`);
+  error.status = 502;
+  throw error;
+}
+
+async function requestGeminiAnalysis({ symbolInfo, marketContext, apiKey, model, retryMissingTables }) {
+  const payloadText = {
+    requestedSymbol: symbolInfo.displaySymbol,
+    venue: symbolInfo.venue,
+    outputContract: {
+      requiredTables: REQUIRED_TABLES,
+      mustCompleteAllTables: true,
+      noIntroOrOutro: true,
+    },
+    retryInstruction: retryMissingTables.length
+      ? `Önceki cevap eksikti. Şu tablolar dahil tüm zorunlu tabloları eksiksiz üret: ${retryMissingTables.join(", ")}`
+      : undefined,
+    hiddenMarketContext: compactMarketContext(marketContext),
+  };
 
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
@@ -22,11 +65,7 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
             role: "user",
             parts: [
               {
-                text: JSON.stringify({
-                  requestedSymbol: symbolInfo.displaySymbol,
-                  venue: symbolInfo.venue,
-                  hiddenMarketContext: compactMarketContext(marketContext),
-                }),
+                text: JSON.stringify(payloadText),
               },
             ],
           },
@@ -34,7 +73,7 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
         generationConfig: {
           temperature: 0.25,
           topP: 0.8,
-          maxOutputTokens: 2600,
+          maxOutputTokens: 4000,
           responseMimeType: "text/plain",
         },
       }),
@@ -51,7 +90,7 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
 
   const output = extractOutputText(payload).trim();
   if (!output) throw new Error("Gemini boş analiz yanıtı döndürdü.");
-  return normalizeAnalysisOutput(output);
+  return output;
 }
 
 const SYSTEM_PROMPT = `
@@ -138,6 +177,7 @@ Cevabın ilk satırı mutlaka "TABLO: TAV Özet" olmalı.
 Tablo dışında giriş cümlesi, kapanış cümlesi veya açıklama yazma.
 "efendim" hitabını TAV Özet tablosunda Hitap satırında kullan.
 Aşağıdaki tablo başlıklarının tamamını aynı sırayla üret.
+Hiçbir tabloyu atlama. Veri yetersizse tabloyu yine üret ve ilgili hücreye "Veri sınırlı" yaz.
 
 TABLO: TAV Özet
 Alan | Değer
@@ -203,15 +243,15 @@ function compactMarketContext(context) {
     timeframes: {
       "5m": {
         indicators: context.timeframes?.["5m"]?.indicators,
-        recentCandles: context.timeframes?.["5m"]?.candles?.slice(-60).map(mapCandle),
+        recentCandles: context.timeframes?.["5m"]?.candles?.slice(-30).map(mapCandle),
       },
       "15m": {
         indicators: context.timeframes?.["15m"]?.indicators,
-        recentCandles: context.timeframes?.["15m"]?.candles?.slice(-60).map(mapCandle),
+        recentCandles: context.timeframes?.["15m"]?.candles?.slice(-30).map(mapCandle),
       },
       "30m": {
         indicators: context.timeframes?.["30m"]?.indicators,
-        recentCandles: context.timeframes?.["30m"]?.candles?.slice(-60).map(mapCandle),
+        recentCandles: context.timeframes?.["30m"]?.candles?.slice(-30).map(mapCandle),
       },
     },
   };
@@ -229,6 +269,10 @@ function normalizeAnalysisOutput(text) {
   const firstTableIndex = trimmed.indexOf("TABLO:");
   if (firstTableIndex > 0) return trimmed.slice(firstTableIndex).trim();
   return trimmed;
+}
+
+function missingTables(text) {
+  return REQUIRED_TABLES.filter((tableName) => !text.includes(tableName));
 }
 
 function userError(message) {
