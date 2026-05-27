@@ -35,7 +35,7 @@ form.addEventListener("submit", async (event) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ symbol: normalized.normalized }),
     });
-    const payload = await response.json();
+    const payload = await readJsonResponse(response);
     if (!response.ok) throw new Error(payload.error ?? "Analiz alınamadı.");
     renderResult(payload);
   } catch (err) {
@@ -72,7 +72,7 @@ async function loadSuggestions(query) {
   const requestId = ++activeSuggestionRequest;
   try {
     const response = await fetch(`/api/suggestions?q=${encodeURIComponent(normalizedQuery)}`);
-    const payload = await response.json();
+    const payload = await readJsonResponse(response);
     if (requestId !== activeSuggestionRequest) return;
     renderSuggestions(payload.suggestions ?? []);
   } catch {
@@ -202,6 +202,18 @@ function formatDate(value) {
     dateStyle: "medium",
     timeStyle: "medium",
   }).format(new Date(value));
+}
+
+async function readJsonResponse(response) {
+  const text = await response.text();
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    const message = response.status === 404
+      ? "API endpoint bulunamadı. Deploy edilen servis backend olarak çalışmıyor veya yanlış URL açılmış."
+      : `Sunucu JSON olmayan cevap döndürdü: ${text.slice(0, 120)}`;
+    return { error: message };
+  }
 }
 
 function escapeHtml(value) {
