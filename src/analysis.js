@@ -43,7 +43,10 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(payload.error?.message ?? "Gemini analiz isteği başarısız oldu.");
+    const message = payload.error?.message ?? "Gemini analiz isteği başarısız oldu.";
+    const error = new Error(`Gemini hatası: ${message}`);
+    error.status = response.status === 429 ? 429 : 502;
+    throw error;
   }
 
   const output = extractOutputText(payload).trim();

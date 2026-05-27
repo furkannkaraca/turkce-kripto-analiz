@@ -325,9 +325,17 @@ async function fetchJson(url) {
       signal: controller.signal,
     });
     const body = await response.text();
-    if (!response.ok) throw new Error(`HTTP ${response.status}: ${body.slice(0, 200)}`);
+    if (!response.ok) {
+      const error = new Error(`Piyasa verisi alınamadı: HTTP ${response.status}`);
+      error.status = 502;
+      throw error;
+    }
     const json = JSON.parse(body);
-    if (json.success === false || json.code === 400) throw new Error(json.message ?? "Borsa API hatası");
+    if (json.success === false || json.code === 400) {
+      const error = new Error(json.message ?? "Borsa API hatası");
+      error.status = 502;
+      throw error;
+    }
     return json;
   } finally {
     clearTimeout(timeout);
