@@ -4,27 +4,41 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Kripto Analiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
-  <body>
-    <main class="shell">
-      <header class="topbar">
-        <div class="brand">
-          <span class="brand-mark" aria-hidden="true"></span>
-          <div>
-            <h1>Kripto Analiz</h1>
-            <p>Binance spot ve MEXC perpetual USDT pariteleri</p>
+  <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
+    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+      <header class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-4">
+            <span
+              class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-sm"
+              aria-hidden="true"
+            >
+              TAV
+            </span>
+            <div>
+              <h1 class="text-2xl font-semibold tracking-tight text-slate-950">Kripto Analiz</h1>
+              <p class="mt-1 text-sm text-slate-500">Binance spot ve MEXC perpetual USDT pariteleri</p>
+            </div>
+          </div>
+          <div
+            class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600"
+            id="statusPill"
+          >
+            Hazır
           </div>
         </div>
-        <div class="status-pill" id="statusPill">Hazır</div>
       </header>
 
-      <section class="workspace">
-        <form class="analysis-form" id="analysisForm" autocomplete="off">
-          <label for="symbolInput">Parite</label>
-          <div class="input-row">
-            <div class="symbol-box">
+      <section class="space-y-6">
+        <form class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="analysisForm" autocomplete="off">
+          <label class="mb-2 block text-sm font-medium text-slate-700" for="symbolInput">Parite</label>
+          <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
+            <div class="relative" id="symbolBox">
               <input
+                class="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base font-medium uppercase text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 id="symbolInput"
                 name="symbol"
                 type="text"
@@ -33,38 +47,52 @@
                 placeholder="BTCUSDT veya BTCUSDT.P"
                 aria-describedby="symbolError"
               />
-              <div class="suggestions" id="suggestions" hidden></div>
+              <div
+                class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg"
+                id="suggestions"
+                hidden
+              ></div>
             </div>
-            <button type="submit" id="submitButton">Analiz Et</button>
+            <button
+              class="inline-flex h-12 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-progress disabled:bg-emerald-300"
+              type="submit"
+              id="submitButton"
+            >
+              Analiz Et
+            </button>
           </div>
-          <p class="error" id="symbolError" role="alert"></p>
+          <p class="mt-2 min-h-5 text-sm font-medium text-red-600" id="symbolError" role="alert"></p>
         </form>
 
-        <section class="result-panel" id="resultPanel" hidden>
-          <div class="result-head">
-            <div>
-              <p class="eyebrow" id="venueLabel"></p>
-              <h2 id="resultSymbol"></h2>
+        <section id="resultPanel" hidden>
+          <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500" id="venueLabel"></p>
+                <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950" id="resultSymbol"></h2>
+              </div>
+              <time class="text-sm text-slate-500" id="generatedAt"></time>
             </div>
-            <time id="generatedAt"></time>
           </div>
-          <div class="tables" id="tables"></div>
+          <div id="tables"></div>
         </section>
 
-        <section class="empty-panel" id="emptyPanel">
-          <div class="market-strip" aria-hidden="true">
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
-            <span></span>
+        <section class="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm" id="emptyPanel">
+          <div class="mx-auto mb-5 flex h-20 w-24 items-end justify-center gap-2" aria-hidden="true">
+            <span class="h-8 w-4 rounded-t bg-emerald-500"></span>
+            <span class="h-14 w-4 rounded-t bg-amber-500"></span>
+            <span class="h-10 w-4 rounded-t bg-emerald-500"></span>
+            <span class="h-16 w-4 rounded-t bg-emerald-600"></span>
+            <span class="h-12 w-4 rounded-t bg-amber-500"></span>
           </div>
-          <h2>Pariteyi girin, analizi başlatın.</h2>
+          <h2 class="text-lg font-semibold text-slate-950">Pariteyi girin, analizi başlatın.</h2>
         </section>
       </section>
     </main>
 
-    <footer>Bu uygulamadaki içerikler yatırım tavsiyesi değildir; eğitim ve piyasa takibi amaçlıdır.</footer>
+    <footer class="mx-auto w-full max-w-5xl px-4 pb-8 text-sm text-slate-500 sm:px-6 lg:px-8">
+      Bu uygulamadaki içerikler yatırım tavsiyesi değildir; eğitim ve piyasa takibi amaçlıdır.
+    </footer>
 
     <script type="module" src="/app.js"></script>
   </body>

@@ -59,7 +59,7 @@ input.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("click", (event) => {
-  if (!event.target.closest(".symbol-box")) hideSuggestions();
+  if (!event.target.closest("#symbolBox")) hideSuggestions();
 });
 
 async function loadSuggestions(query) {
@@ -90,8 +90,18 @@ function renderSuggestions(items) {
   for (const item of items) {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "suggestion";
-    button.innerHTML = `<span>${escapeHtml(item.symbol)}</span><small>${escapeHtml(item.venue)}</small>`;
+    button.className =
+      "flex w-full items-center justify-between border-b border-slate-100 px-4 py-3 text-left text-sm text-slate-800 transition last:border-b-0 hover:bg-slate-50 focus:bg-slate-50 focus:outline-none";
+
+    const symbol = document.createElement("span");
+    symbol.className = "font-semibold";
+    symbol.textContent = item.symbol;
+
+    const venue = document.createElement("small");
+    venue.className = "text-xs font-medium text-slate-500";
+    venue.textContent = item.venue;
+
+    button.append(symbol, venue);
     button.addEventListener("click", () => {
       input.value = item.symbol;
       hideSuggestions();
@@ -108,10 +118,14 @@ function renderResult(payload) {
   venueLabel.textContent = payload.venue === "MEXC_PERP" ? "MEXC Perpetual Futures" : "Binance Spot";
   generatedAt.textContent = formatDate(payload.generatedAt);
   generatedAt.dateTime = payload.generatedAt;
-  tables.replaceChildren(...parsePlainTextTables(payload.analysis).map(renderTableBlock));
+  tables.replaceChildren(...formatAnalysisToHTML(payload.analysis));
   resultPanel.hidden = false;
   emptyPanel.hidden = true;
   statusPill.textContent = "Tamamlandı";
+}
+
+function formatAnalysisToHTML(text) {
+  return parsePlainTextTables(text).map(renderTableCard);
 }
 
 function parsePlainTextTables(text) {
@@ -138,44 +152,89 @@ function parsePlainTextTables(text) {
   return blocks.length ? blocks : [{ title: "Analiz", rows: [["Sonuç"], [text]] }];
 }
 
-function renderTableBlock(block) {
+function renderTableCard(block) {
   const section = document.createElement("section");
-  section.className = "table-block";
+  section.className = "mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm";
+
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "border-b border-slate-200 px-5 py-4";
 
   const title = document.createElement("h3");
+  title.className = "text-base font-semibold text-slate-950";
   title.textContent = block.title;
+  titleWrap.append(title);
 
-  const wrap = document.createElement("div");
-  wrap.className = "table-wrap";
+  const tableWrap = document.createElement("div");
+  tableWrap.className = "overflow-x-auto";
 
   const table = document.createElement("table");
+  table.className = "min-w-full divide-y divide-slate-200";
+
   const [head = ["Alan", "Değer"], ...body] = block.rows;
   const columnCount = Math.max(head.length, ...body.map((row) => row.length), 1);
 
   const thead = document.createElement("thead");
+  thead.className = "bg-slate-50 text-xs uppercase font-semibold text-slate-500 tracking-wider";
+
   const headRow = document.createElement("tr");
   normalizeRow(head, columnCount).forEach((cell) => {
     const th = document.createElement("th");
+    th.className = "px-5 py-3 text-left";
     th.textContent = cell;
     headRow.append(th);
   });
   thead.append(headRow);
 
   const tbody = document.createElement("tbody");
+  tbody.className = "divide-y divide-slate-100 bg-white";
+
   body.forEach((row) => {
     const tr = document.createElement("tr");
+    tr.className = "align-top";
+
     normalizeRow(row, columnCount).forEach((cell) => {
       const td = document.createElement("td");
-      td.textContent = cell;
+      td.className = "px-5 py-4 text-sm text-slate-700";
+      td.append(formatCellContent(cell));
       tr.append(td);
     });
+
     tbody.append(tr);
   });
 
   table.append(thead, tbody);
-  wrap.append(table);
-  section.append(title, wrap);
+  tableWrap.append(table);
+  section.append(titleWrap, tableWrap);
   return section;
+}
+
+function formatCellContent(text) {
+  const badgeClass = getBadgeClass(text);
+  if (!badgeClass) return document.createTextNode(text);
+
+  const badge = document.createElement("span");
+  badge.className = badgeClass;
+  badge.textContent = text;
+  return badge;
+}
+
+function getBadgeClass(text) {
+  const normalized = String(text ?? "").toLocaleLowerCase("tr-TR");
+  const base = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
+
+  if (["kırılım", "aşağı", "düşüş", "short"].some((term) => normalized.includes(term))) {
+    return `${base} bg-red-100 text-red-800`;
+  }
+
+  if (["yükseliş", "yukarı", "long", "mitigation"].some((term) => normalized.includes(term))) {
+    return `${base} bg-emerald-100 text-emerald-800`;
+  }
+
+  if (["konsolidasyon", "likidite alımı", "bekle"].some((term) => normalized.includes(term))) {
+    return `${base} bg-amber-100 text-amber-800`;
+  }
+
+  return "";
 }
 
 function normalizeRow(row, length) {
@@ -209,15 +268,10 @@ async function readJsonResponse(response) {
   try {
     return text ? JSON.parse(text) : {};
   } catch {
-    const message = response.status === 404
-      ? "API endpoint bulunamadı. Deploy edilen servis backend olarak çalışmıyor veya yanlış URL açılmış."
-      : `Sunucu JSON olmayan cevap döndürdü: ${text.slice(0, 120)}`;
+    const message =
+      response.status === 404
+        ? "API endpoint bulunamadı. Deploy edilen servis backend olarak çalışmıyor veya yanlış URL açılmış."
+        : `Sunucu JSON olmayan cevap döndürdü: ${text.slice(0, 120)}`;
     return { error: message };
   }
-}
-
-function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, (char) => {
-    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[char];
-  });
 }
