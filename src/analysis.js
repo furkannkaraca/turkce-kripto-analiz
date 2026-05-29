@@ -1,4 +1,6 @@
 const DEFAULT_MODEL = "gemini-2.5-pro";
+const DEFAULT_FALLBACK_MODELS = ["gemini-2.5-flash-lite"];
+const RETRYABLE_GEMINI_STATUSES = new Set([500, 502, 503, 504]);
 const REQUIRED_TABLES = [
   "TABLO: TAV Özet",
   "TABLO: Piyasa Türü",
@@ -14,23 +16,53 @@ export async function generateAnalysis({ symbolInfo, marketContext, apiKey, mode
     throw userError("Gemini API anahtarı bulunamadı. Lütfen GEMINI_API_KEY ortam değişkenini ayarlayın.");
   }
 
-  let lastOutput = "";
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const output = await requestGeminiAnalysis({
-      symbolInfo,
-      marketContext,
-      apiKey,
-      model,
-      retryMissingTables: attempt > 0 ? missingTables(lastOutput) : [],
-    });
+  let lastError;
 
-    lastOutput = normalizeAnalysisOutput(output);
-    if (!missingTables(lastOutput).length) return lastOutput;
+  for (const modelName of buildModelList(model)) {
+    let lastOutput = "";
+
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      try {
+        const output = await requestGeminiAnalysisWithRetry({
+          symbolInfo,
+          marketContext,
+          apiKey,
+          model: modelName,
+          retryMissingTables: attempt > 0 ? missingTables(lastOutput) : [],
+        });
+
+        lastOutput = normalizeAnalysisOutput(output);
+        if (!missingTables(lastOutput).length) return lastOutput;
+      } catch (error) {
+        lastError = error;
+        if (!isRetryableGeminiError(error)) throw error;
+        break;
+      }
+    }
+
+    if (lastOutput) {
+      lastError = new Error(`Gemini analizi eksik döndürdü. Eksik tablolar: ${missingTables(lastOutput).join(", ")}`);
+      lastError.status = 502;
+    }
   }
 
-  const error = new Error(`Gemini analizi eksik döndürdü. Eksik tablolar: ${missingTables(lastOutput).join(", ")}`);
-  error.status = 502;
-  throw error;
+  throw lastError ?? Object.assign(new Error("Gemini analizi üretilemedi."), { status: 502 });
+}
+
+async function requestGeminiAnalysisWithRetry(options) {
+  let lastError;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      return await requestGeminiAnalysis(options);
+    } catch (error) {
+      lastError = error;
+      if (!isRetryableGeminiError(error) || attempt === 1) break;
+      await delay(900 * (attempt + 1));
+    }
+  }
+
+  throw lastError;
 }
 
 async function requestGeminiAnalysis({ symbolInfo, marketContext, apiKey, model, retryMissingTables }) {
@@ -84,7 +116,8 @@ async function requestGeminiAnalysis({ symbolInfo, marketContext, apiKey, model,
   if (!response.ok) {
     const message = payload.error?.message ?? "Gemini analiz isteği başarısız oldu.";
     const error = new Error(`Gemini hatası: ${message}`);
-    error.status = response.status === 429 ? 429 : 502;
+    error.status = response.status === 429 ? 429 : response.status === 503 ? 503 : 502;
+    error.upstreamStatus = response.status;
     throw error;
   }
 
@@ -304,6 +337,28 @@ function normalizeAnalysisOutput(text) {
 
 function missingTables(text) {
   return REQUIRED_TABLES.filter((tableName) => !text.includes(tableName));
+}
+
+function buildModelList(model) {
+  const configuredFallbacks = String(process.env.GEMINI_FALLBACK_MODELS ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  return [...new Set([model, ...configuredFallbacks, ...DEFAULT_FALLBACK_MODELS])];
+}
+
+function isRetryableGeminiError(error) {
+  return (
+    RETRYABLE_GEMINI_STATUSES.has(error.upstreamStatus) ||
+    /high demand|try again later|unavailable|overloaded/i.test(error.message)
+  );
+}
+
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
 }
 
 function userError(message) {
