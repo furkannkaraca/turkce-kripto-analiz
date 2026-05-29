@@ -242,6 +242,10 @@ Tablo dışında giriş cümlesi, kapanış cümlesi veya açıklama yazma.
 "efendim" hitabını TAV Özet tablosunda Hitap satırında kullan.
 Aşağıdaki tablo başlıklarının tamamını aynı sırayla üret.
 Hiçbir tabloyu atlama. Veri yetersizse tabloyu yine üret ve ilgili hücreye "Veri sınırlı" yaz.
+Tablo hücrelerini tek kelimelik özetlerle geçiştirme.
+Her yorum hücresinde mümkün olduğunda yapı + fiyat bölgesi + gerekçe üçlüsünü ver.
+PA, ICT, SMT, Likidite/Hacim, Senaryo ve Risk satırlarında en az bir açıklayıcı cümle kullan.
+Yuvarlak ifadeler yerine gözlenen mum, hacim, likidite, OB/FVG veya 5m onay koşulunu açıkça yaz.
 
 TABLO: TAV Özet
 Alan | Değer
@@ -284,7 +288,7 @@ Kasa/Kaldıraç | 10 USDT / 20x | Pozisyon: 200 USDT | ...
 Long R:R | ... | ... | Stop: -... USDT, TP: +... USDT
 Short R:R | ... | ... | Stop: -... USDT, TP: +... USDT
 
-Kısa, net ve ölçülü yaz. Her tabloda en fazla 6 satır olsun.
+Net ve okunabilir yaz, ancak aşırı kısa özetleme yapma. Her tabloda en fazla 6 satır olsun; yorum hücreleri 1-2 cümle olabilir.
 `.trim();
 
 function compactMarketContext(context) {
