@@ -3,42 +3,76 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Kripto Analiz</title>
+    <title>TAV Analytics</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body class="min-h-screen bg-slate-50 text-slate-800 antialiased">
-    <main class="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <header class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div class="flex items-center gap-4">
-            <span
-              class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-600 text-sm font-bold text-white shadow-sm"
-              aria-hidden="true"
-            >
-              TAV
-            </span>
-            <div>
-              <h1 class="text-2xl font-semibold tracking-tight text-slate-950">Kripto Analiz</h1>
-              <p class="mt-1 text-sm text-slate-500">Binance spot ve MEXC perpetual USDT pariteleri</p>
+    <main class="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+      <header class="mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="border-b border-slate-100 px-5 py-4 sm:px-6">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-4">
+              <span
+                class="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-sm font-bold text-emerald-300 shadow-sm"
+                aria-hidden="true"
+              >
+                TAV
+              </span>
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">TAV Analytics</p>
+                <h1 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950">Kripto Piyasa Okuma Sistemi</h1>
+                <p class="mt-1 text-sm text-slate-500">PA, ICT, SMT, hacim ve disiplinli risk yönetimiyle USDT parite analizi</p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <span
+                class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700"
+                id="statusPill"
+              >
+                Hazır
+              </span>
+              <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+                Binance Spot
+              </span>
+              <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600">
+                MEXC Perpetual
+              </span>
             </div>
           </div>
-          <div
-            class="inline-flex w-fit items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600"
-            id="statusPill"
-          >
-            Hazır
+        </div>
+
+        <div class="grid gap-3 bg-slate-50/70 px-5 py-4 text-sm sm:grid-cols-3 sm:px-6">
+          <div class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Zaman Dilimleri</p>
+            <p class="mt-1 font-semibold text-slate-900">5m / 15m / 30m</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Risk Modeli</p>
+            <p class="mt-1 font-semibold text-slate-900">10 USDT kasa, 20x kaldıraç</p>
+          </div>
+          <div class="rounded-xl border border-slate-200 bg-white px-4 py-3">
+            <p class="text-xs font-medium uppercase tracking-wider text-slate-400">Çıktı</p>
+            <p class="mt-1 font-semibold text-slate-900">Entry / TP / SL / R:R</p>
           </div>
         </div>
       </header>
 
       <section class="space-y-6">
-        <form class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" id="analysisForm" autocomplete="off">
-          <label class="mb-2 block text-sm font-medium text-slate-700" for="symbolInput">Parite</label>
+        <form class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" id="analysisForm" autocomplete="off">
+          <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <label class="block text-sm font-semibold text-slate-900" for="symbolInput">Parite Analizi</label>
+              <p class="mt-1 text-sm text-slate-500">Spot için BTCUSDT, MEXC perpetual için BTCUSDT.P formatını kullanın.</p>
+            </div>
+            <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">Canlı veri bağlamı</span>
+          </div>
+
           <div class="grid gap-3 sm:grid-cols-[1fr_auto]">
             <div class="relative" id="symbolBox">
               <input
-                class="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-base font-medium uppercase text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
+                class="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base font-semibold uppercase text-slate-950 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500"
                 id="symbolInput"
                 name="symbol"
                 type="text"
@@ -48,13 +82,13 @@
                 aria-describedby="symbolError"
               />
               <div
-                class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white shadow-lg"
+                class="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 max-h-72 overflow-auto rounded-xl border border-slate-200 bg-white shadow-xl"
                 id="suggestions"
                 hidden
               ></div>
             </div>
             <button
-              class="inline-flex h-12 items-center justify-center rounded-xl bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-progress disabled:bg-emerald-300"
+              class="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:cursor-progress disabled:bg-emerald-300"
               type="submit"
               id="submitButton"
             >
@@ -64,12 +98,41 @@
           <p class="mt-2 min-h-5 text-sm font-medium text-red-600" id="symbolError" role="alert"></p>
         </form>
 
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6" id="loadingPanel" hidden>
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm font-semibold text-slate-950">TAV analizi hazırlanıyor</p>
+              <p class="mt-1 text-sm text-slate-500">Borsa verisi, zaman dilimleri ve senaryo matematiği sırayla işleniyor.</p>
+            </div>
+            <div class="h-2 w-full overflow-hidden rounded-full bg-slate-100 sm:w-56">
+              <div class="h-full w-2/3 animate-pulse rounded-full bg-emerald-500"></div>
+            </div>
+          </div>
+          <div class="mt-5 grid gap-3 sm:grid-cols-5">
+            <div class="loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500" data-loading-step>
+              Sembol doğrulanıyor
+            </div>
+            <div class="loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500" data-loading-step>
+              Borsa verisi alınıyor
+            </div>
+            <div class="loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500" data-loading-step>
+              5m / 15m / 30m hazırlanıyor
+            </div>
+            <div class="loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500" data-loading-step>
+              TAV senaryoları üretiliyor
+            </div>
+            <div class="loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500" data-loading-step>
+              Tablolar oluşturuluyor
+            </div>
+          </div>
+        </section>
+
         <section id="resultPanel" hidden>
-          <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div class="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p class="text-xs font-semibold uppercase tracking-wider text-slate-500" id="venueLabel"></p>
-                <h2 class="mt-1 text-2xl font-semibold tracking-tight text-slate-950" id="resultSymbol"></h2>
+                <p class="text-xs font-semibold uppercase tracking-wider text-emerald-700" id="venueLabel"></p>
+                <h2 class="mt-1 text-3xl font-semibold tracking-tight text-slate-950" id="resultSymbol"></h2>
               </div>
               <time class="text-sm text-slate-500" id="generatedAt"></time>
             </div>
@@ -77,20 +140,21 @@
           <div id="tables"></div>
         </section>
 
-        <section class="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm" id="emptyPanel">
-          <div class="mx-auto mb-5 flex h-20 w-24 items-end justify-center gap-2" aria-hidden="true">
+        <section class="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm" id="emptyPanel">
+          <div class="mx-auto mb-5 flex h-20 w-28 items-end justify-center gap-2" aria-hidden="true">
             <span class="h-8 w-4 rounded-t bg-emerald-500"></span>
             <span class="h-14 w-4 rounded-t bg-amber-500"></span>
-            <span class="h-10 w-4 rounded-t bg-emerald-500"></span>
+            <span class="h-10 w-4 rounded-t bg-slate-400"></span>
             <span class="h-16 w-4 rounded-t bg-emerald-600"></span>
-            <span class="h-12 w-4 rounded-t bg-amber-500"></span>
+            <span class="h-12 w-4 rounded-t bg-red-400"></span>
           </div>
-          <h2 class="text-lg font-semibold text-slate-950">Pariteyi girin, analizi başlatın.</h2>
+          <h2 class="text-lg font-semibold text-slate-950">Pariteyi girin, TAV analizini başlatın.</h2>
+          <p class="mt-2 text-sm text-slate-500">Sonuçta Long/Short senaryo kartları, R:R ve detay tabloları gösterilir.</p>
         </section>
       </section>
     </main>
 
-    <footer class="mx-auto w-full max-w-5xl px-4 pb-8 text-sm text-slate-500 sm:px-6 lg:px-8">
+    <footer class="mx-auto w-full max-w-6xl px-4 pb-8 text-sm text-slate-500 sm:px-6 lg:px-8">
       Bu uygulamadaki içerikler yatırım tavsiyesi değildir; eğitim ve piyasa takibi amaçlıdır.
     </footer>
 

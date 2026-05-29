@@ -8,6 +8,8 @@ const submitButton = document.querySelector("#submitButton");
 const statusPill = document.querySelector("#statusPill");
 const resultPanel = document.querySelector("#resultPanel");
 const emptyPanel = document.querySelector("#emptyPanel");
+const loadingPanel = document.querySelector("#loadingPanel");
+const loadingSteps = [...document.querySelectorAll("[data-loading-step]")];
 const tables = document.querySelector("#tables");
 const resultSymbol = document.querySelector("#resultSymbol");
 const venueLabel = document.querySelector("#venueLabel");
@@ -15,6 +17,8 @@ const generatedAt = document.querySelector("#generatedAt");
 
 let suggestionTimer;
 let activeSuggestionRequest = 0;
+let loadingTimer;
+let loadingStepIndex = 0;
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -41,6 +45,8 @@ form.addEventListener("submit", async (event) => {
   } catch (err) {
     showError(err.message);
     statusPill.textContent = "Hata";
+    statusPill.className =
+      "inline-flex items-center rounded-full border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700";
   } finally {
     setLoading(false);
   }
@@ -114,18 +120,23 @@ function renderSuggestions(items) {
 }
 
 function renderResult(payload) {
+  const blocks = parsePlainTextTables(payload.analysis);
   resultSymbol.textContent = payload.symbol;
   venueLabel.textContent = payload.venue === "MEXC_PERP" ? "MEXC Perpetual Futures" : "Binance Spot";
   generatedAt.textContent = formatDate(payload.generatedAt);
   generatedAt.dateTime = payload.generatedAt;
-  tables.replaceChildren(...formatAnalysisToHTML(payload.analysis));
+  tables.replaceChildren(...formatAnalysisToHTML(blocks));
   resultPanel.hidden = false;
   emptyPanel.hidden = true;
+  loadingPanel.hidden = true;
   statusPill.textContent = "Tamamlandı";
+  statusPill.className =
+    "inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700";
 }
 
-function formatAnalysisToHTML(text) {
-  return parsePlainTextTables(text).map(renderTableCard);
+function formatAnalysisToHTML(blocksOrText) {
+  const blocks = Array.isArray(blocksOrText) ? blocksOrText : parsePlainTextTables(blocksOrText);
+  return [...renderInsightCards(blocks), ...blocks.map(renderTableCard)];
 }
 
 function parsePlainTextTables(text) {
@@ -152,9 +163,115 @@ function parsePlainTextTables(text) {
   return blocks.length ? blocks : [{ title: "Analiz", rows: [["Sonuç"], [text]] }];
 }
 
+function renderInsightCards(blocks) {
+  const scenarioBlock = findBlock(blocks, "TAV Senaryo");
+  const riskBlock = findBlock(blocks, "Risk Disiplini");
+  const nodes = [];
+
+  if (scenarioBlock) nodes.push(renderScenarioDashboard(scenarioBlock));
+  if (riskBlock) nodes.push(renderRiskDashboard(riskBlock));
+
+  return nodes;
+}
+
+function renderScenarioDashboard(block) {
+  const section = document.createElement("section");
+  section.className = "mb-6";
+
+  const header = document.createElement("div");
+  header.className = "mb-3 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between";
+  header.innerHTML = `
+    <div>
+      <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700">İşlem Haritası</p>
+      <h3 class="mt-1 text-xl font-semibold text-slate-950">TAV Senaryo Kartları</h3>
+    </div>
+    <p class="text-sm text-slate-500">Entry, hedef, stop ve 5m onay tek bakışta.</p>
+  `;
+
+  const grid = document.createElement("div");
+  grid.className = "grid gap-4 lg:grid-cols-3";
+
+  const rows = tableObjects(block);
+  rows.forEach((row) => grid.append(renderScenarioCard(row)));
+
+  section.append(header, grid);
+  return section;
+}
+
+function renderScenarioCard(row) {
+  const scenario = getValue(row, "SENARYO", "Senaryo") || "Senaryo";
+  const tone = scenarioTone(scenario);
+  const card = document.createElement("article");
+  card.className = `rounded-2xl border bg-white p-5 shadow-sm ${tone.border}`;
+
+  const title = document.createElement("div");
+  title.className = "mb-4 flex items-center justify-between gap-3";
+  title.innerHTML = `
+    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${tone.badge}">${escapeText(scenario)}</span>
+    <span class="text-xs font-medium text-slate-400">TAV</span>
+  `;
+
+  const metrics = document.createElement("div");
+  metrics.className = "grid gap-3";
+  [
+    ["Giriş", getValue(row, "GİRİŞ", "GIRIS")],
+    ["Hedef", getValue(row, "HEDEF")],
+    ["Stop", getValue(row, "STOP")],
+    ["5m Onay", getValue(row, "5M KONFİRMASYON", "5M KONFIRMASYON")],
+    ["İptal", getValue(row, "İPTAL KOŞULU", "IPTAL KOSULU")],
+  ].forEach(([label, value]) => {
+    const item = document.createElement("div");
+    item.className = "rounded-xl bg-slate-50 px-3 py-3";
+
+    const labelEl = document.createElement("p");
+    labelEl.className = "text-xs font-medium uppercase tracking-wider text-slate-400";
+    labelEl.textContent = label;
+
+    const valueEl = document.createElement("div");
+    valueEl.className = "mt-1 text-sm font-semibold text-slate-900";
+    valueEl.append(formatCellContent(value || "Veri sınırlı"));
+
+    item.append(labelEl, valueEl);
+    metrics.append(item);
+  });
+
+  card.append(title, metrics);
+  return card;
+}
+
+function renderRiskDashboard(block) {
+  const section = document.createElement("section");
+  section.className = "mb-6 rounded-2xl border border-slate-200 bg-slate-950 p-5 text-white shadow-sm";
+
+  const rows = tableObjects(block);
+  const grid = document.createElement("div");
+  grid.className = "mt-4 grid gap-3 md:grid-cols-3";
+
+  rows.slice(0, 3).forEach((row) => {
+    const card = document.createElement("div");
+    card.className = "rounded-xl border border-white/10 bg-white/5 p-4";
+    card.innerHTML = `
+      <p class="text-xs font-semibold uppercase tracking-wider text-emerald-300">${escapeText(getValue(row, "PARAMETRE") || "Parametre")}</p>
+      <p class="mt-2 text-sm font-semibold text-white">${escapeText(getValue(row, "DEĞER") || "Veri sınırlı")}</p>
+      <p class="mt-2 text-xs leading-5 text-slate-300">${escapeText(getValue(row, "R:R HESABI") || "")}</p>
+      <p class="mt-2 text-xs font-medium text-emerald-200">${escapeText(getValue(row, "PNL BEKLENTİSİ", "PnL BEKLENTİSİ") || "")}</p>
+    `;
+    grid.append(card);
+  });
+
+  const title = document.createElement("div");
+  title.innerHTML = `
+    <p class="text-xs font-semibold uppercase tracking-[0.2em] text-emerald-300">Risk Motoru</p>
+    <h3 class="mt-1 text-xl font-semibold">Kasa, kaldıraç ve R:R özeti</h3>
+  `;
+
+  section.append(title, grid);
+  return section;
+}
+
 function renderTableCard(block) {
   const section = document.createElement("section");
-  section.className = "mb-6 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm";
+  section.className = "mb-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm";
 
   const titleWrap = document.createElement("div");
   titleWrap.className = "border-b border-slate-200 px-5 py-4";
@@ -237,6 +354,48 @@ function getBadgeClass(text) {
   return "";
 }
 
+function tableObjects(block) {
+  const [head = [], ...rows] = block.rows;
+  return rows.map((row) => {
+    const object = {};
+    head.forEach((key, index) => {
+      object[normalizeKey(key)] = row[index] ?? "";
+    });
+    return object;
+  });
+}
+
+function getValue(row, ...keys) {
+  for (const key of keys) {
+    const value = row[normalizeKey(key)];
+    if (value) return value;
+  }
+  return "";
+}
+
+function normalizeKey(key) {
+  return String(key ?? "")
+    .trim()
+    .toLocaleUpperCase("tr-TR")
+    .replace(/\s+/g, " ");
+}
+
+function findBlock(blocks, title) {
+  const needle = title.toLocaleLowerCase("tr-TR");
+  return blocks.find((block) => block.title.toLocaleLowerCase("tr-TR").includes(needle));
+}
+
+function scenarioTone(scenario) {
+  const normalized = scenario.toLocaleLowerCase("tr-TR");
+  if (normalized.includes("short")) {
+    return { border: "border-red-200", badge: "bg-red-100 text-red-800" };
+  }
+  if (normalized.includes("long")) {
+    return { border: "border-emerald-200", badge: "bg-emerald-100 text-emerald-800" };
+  }
+  return { border: "border-amber-200", badge: "bg-amber-100 text-amber-800" };
+}
+
 function normalizeRow(row, length) {
   return Array.from({ length }, (_, index) => row[index] ?? "");
 }
@@ -244,7 +403,43 @@ function normalizeRow(row, length) {
 function setLoading(isLoading) {
   submitButton.disabled = isLoading;
   submitButton.textContent = isLoading ? "Analiz Ediliyor" : "Analiz Et";
-  statusPill.textContent = isLoading ? "Veri alınıyor" : "Hazır";
+
+  if (isLoading) {
+    statusPill.textContent = "Veri alınıyor";
+    statusPill.className =
+      "inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700";
+    resultPanel.hidden = true;
+    emptyPanel.hidden = true;
+    loadingPanel.hidden = false;
+    startLoadingSteps();
+  } else {
+    stopLoadingSteps();
+    loadingPanel.hidden = true;
+  }
+}
+
+function startLoadingSteps() {
+  loadingStepIndex = 0;
+  paintLoadingSteps();
+  clearInterval(loadingTimer);
+  loadingTimer = setInterval(() => {
+    loadingStepIndex = Math.min(loadingStepIndex + 1, loadingSteps.length - 1);
+    paintLoadingSteps();
+  }, 900);
+}
+
+function stopLoadingSteps() {
+  clearInterval(loadingTimer);
+  loadingTimer = undefined;
+}
+
+function paintLoadingSteps() {
+  loadingSteps.forEach((step, index) => {
+    const isActive = index <= loadingStepIndex;
+    step.className = isActive
+      ? "loading-step rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-3 text-xs font-semibold text-emerald-700"
+      : "loading-step rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs font-medium text-slate-500";
+  });
 }
 
 function hideSuggestions() {
@@ -254,6 +449,7 @@ function hideSuggestions() {
 
 function showError(message) {
   error.textContent = message;
+  if (message && resultPanel.hidden) emptyPanel.hidden = false;
 }
 
 function formatDate(value) {
@@ -274,4 +470,13 @@ async function readJsonResponse(response) {
         : `Sunucu JSON olmayan cevap döndürdü: ${text.slice(0, 120)}`;
     return { error: message };
   }
+}
+
+function escapeText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 }
