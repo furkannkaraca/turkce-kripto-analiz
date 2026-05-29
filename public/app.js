@@ -222,15 +222,15 @@ function getBadgeClass(text) {
   const normalized = String(text ?? "").toLocaleLowerCase("tr-TR");
   const base = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium";
 
-  if (["kırılım", "aşağı", "düşüş", "short"].some((term) => normalized.includes(term))) {
+  if (["kırılım", "aşağı", "düşüş", "short", "stop", "riskli", "iptal", "sfp"].some((term) => normalized.includes(term))) {
     return `${base} bg-red-100 text-red-800`;
   }
 
-  if (["yükseliş", "yukarı", "long", "mitigation"].some((term) => normalized.includes(term))) {
+  if (["yükseliş", "yukarı", "long", "mitigation", "hedef", "tp", "breaker var"].some((term) => normalized.includes(term))) {
     return `${base} bg-emerald-100 text-emerald-800`;
   }
 
-  if (["konsolidasyon", "likidite alımı", "bekle"].some((term) => normalized.includes(term))) {
+  if (["konsolidasyon", "likidite alımı", "bekle", "absorpsiyon", "emilim", "veri sınırlı"].some((term) => normalized.includes(term))) {
     return `${base} bg-amber-100 text-amber-800`;
   }
 
